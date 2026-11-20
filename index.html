@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101b2d">
+<title>Abu Assem PS System</title>
+<style>
+:root{--bg:#0b1423;--panel:#142238;--panel2:#1b2d46;--teal:#20c7b5;--blue:#347cf4;--gold:#f5b84b;--text:#f4f7fb;--muted:#a9b8ca;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#0b1423,#101f34);color:var(--text);font-family:Tahoma,Arial,sans-serif;min-height:100vh}
+header{padding:20px 16px;background:#101b2d;border-bottom:1px solid #29405d;position:sticky;top:0;z-index:3}
+.head{max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:21px;margin:0} .sub{color:var(--muted);font-size:12px;margin-top:5px}
+main{max-width:1100px;margin:20px auto;padding:0 14px 40px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat,.card,.panel{background:var(--panel);border:1px solid #29405d;border-radius:15px;padding:14px}
+.stat small{color:var(--muted)}.stat strong{display:block;font-size:22px;margin-top:7px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+button,input,select{font:inherit;border-radius:10px;border:1px solid #38516e;padding:10px;background:#0f1c2e;color:var(--text)}
+button{cursor:pointer;background:var(--blue);border:0;font-weight:bold}button.secondary{background:#263c58}button.teal{background:#138f84}button.gold{background:#a87519}button.danger{background:#a83f4b}
+input,select{min-width:0;width:100%}label{display:block;color:var(--muted);font-size:12px;margin:0 0 6px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px}
+.card{padding:15px}.cardtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{margin:0;font-size:17px}.status{font-size:11px;border-radius:30px;padding:5px 9px;background:#17483f;color:#7df0d8}.status.busy{background:#513d19;color:#ffd27a}
+.details{color:var(--muted);font-size:13px;line-height:1.9;margin:12px 0}.timer{font-size:22px;font-weight:bold;color:var(--teal);direction:ltr;text-align:right}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;padding:9px 7px;font-size:12px}
+section{margin-top:22px}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+h2{font-size:17px;margin:0}.muted{color:var(--muted);font-size:12px}
+.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;align-items:end}
+.field{min-width:0}.wide{grid-column:span 2}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;text-align:right;border-bottom:1px solid #29405d}th{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:20px}
+dialog{background:#142238;color:var(--text);border:1px solid #45617f;border-radius:16px;width:min(520px,94vw);padding:18px}dialog::backdrop{background:#000a}.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.billline{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #29405d}
+footer{text-align:center;color:#8294aa;font-size:11px;padding:18px}
+@media(max-width:650px){.stats{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.wide{grid-column:span 2}h1{font-size:17px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>🎮 Abu Assem PS System</h1><div class="sub">إدارة رومات البلايستيشن والحسابات</div></div><button class="gold" onclick="openSettings()">إعدادات الأسعار</button></div></header>
+<main>
+<div class="stats">
+ <div class="stat"><small>إجمالي الرومات</small><strong id="totalRooms">0</strong></div>
+ <div class="stat"><small>الرومات الشغالة</small><strong id="activeRooms">0</strong></div>
+ <div class="stat"><small>إجمالي حسابات الجلسات</small><strong id="todayTotal">0 ج.م</strong></div>
+</div>
+<div class="toolbar"><button onclick="addRoom()">＋ إضافة روم</button><button class="secondary" onclick="showArchive()">أرشيف الفواتير</button><button class="secondary" onclick="exportData()">تصدير نسخة احتياطية</button><button class="secondary" onclick="document.getElementById('restoreFile').click()">استعادة نسخة</button><input id="restoreFile" type="file" accept="application/json" hidden onchange="importData(event)"></div>
+<section><div class="sectionhead"><h2>الرومات</h2><span class="muted">افتح الجلسة وحدد سنجل أو مالتي</span></div><div id="rooms" class="rooms"></div></section>
+<section class="panel"><div class="sectionhead"><h2>إضافة مشروب أو خدمة</h2><span class="muted">تُضاف على حساب الروم المفتوح</span></div>
+<div class="formgrid">
+<div class="field"><label>الروم</label><select id="drinkRoom"></select></div>
+<div class="field"><label>اسم المشروب / الخدمة</label><input id="drinkName" placeholder="مثال: شاي"></div>
+<div class="field"><label>السعر (ج.م)</label><input id="drinkPrice" type="number" min="0" placeholder="10"></div>
+<div class="field"><button class="teal" style="width:100%" onclick="addDrink()">إضافة للحساب</button></div>
+</div></section>
+<section class="panel"><div class="sectionhead"><h2>آخر الفواتير</h2><span class="muted">الفواتير محفوظة على نفس الجهاز والمتصفح</span></div><div id="recentBills"></div></section>
+</main>
+<footer>نسخة تجريبية محلية — البيانات محفوظة على هذا الجهاز فقط. استخدم «تصدير نسخة احتياطية» بانتظام.</footer>
+
+<dialog id="startDialog"><div class="modalhead"><h2>فتح جلسة جديدة</h2><button class="secondary" onclick="closeDialog('startDialog')">✕</button></div>
+<div class="formgrid">
+<div class="field"><label>نوع اللعب</label><select id="playType"><option value="سنجل">سنجل</option><option value="مالتي">مالتي</option></select></div>
+<div class="field"><label>سعر الساعة (ج.م)</label><input id="hourRate" type="number" min="0"></div>
+<div class="field wide"><label>اسم العميل (اختياري)</label><input id="customer" placeholder="اسم العميل"></div>
+</div><div class="actions"><button onclick="confirmStart()">ابدأ الجلسة</button><button class="secondary" onclick="closeDialog('startDialog')">إلغاء</button></div></dialog>
+
+<dialog id="settingsDialog"><div class="modalhead"><h2>إعدادات الأسعار</h2><button class="secondary" onclick="closeDialog('settingsDialog')">✕</button></div>
+<div class="formgrid"><div class="field"><label>سنجل / ساعة</label><input id="singleRate" type="number" min="0"></div><div class="field"><label>مالتي / ساعة</label><input id="multiRate" type="number" min="0"></div></div>
+<div class="actions"><button onclick="saveSettings()">حفظ الأسعار</button></div></dialog>
+
+<dialog id="billDialog"><div class="modalhead"><h2>إنهاء الجلسة والفاتورة</h2><button class="secondary" onclick="closeDialog('billDialog')">✕</button></div><div id="billDetails"></div><div class="actions"><button onclick="finishBill()">حفظ الفاتورة وإنهاء الروم</button><button class="secondary" onclick="closeDialog('billDialog')">رجوع</button></div></dialog>
+<dialog id="archiveDialog"><div class="modalhead"><h2>أرشيف الفواتير</h2><button class="secondary" onclick="closeDialog('archiveDialog')">✕</button></div><div id="archiveList"></div></dialog>
+<script>
+const KEY='abuAssemPS_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{rooms:[{id:1,name:'روم 1',session:null},{id:2,name:'روم 2',session:null},{id:3,name:'روم 3',session:null},{id:4,name:'روم 4',session:null}],bills:[],rates:{single:20,multi:30},nextId:5};
+let pendingRoom=null,pendingBill=null;
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function money(n){return (Math.round(n*100)/100).toFixed(2).replace(/\.00$/,'')+' ج.م'}
+function elapsed(s){return Math.max(0,Date.now()-s.startedAt)}
+function sessionCost(s){return Math.ceil(elapsed(s)/3600000)*s.rate}
+function fmt(ms){let sec=Math.floor(ms/1000),h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),ss=sec%60;return [h,m,ss].map(x=>String(x).padStart(2,'0')).join(':')}
+function render(){
+ document.getElementById('totalRooms').textContent=db.rooms.length;
+ document.getElementById('activeRooms').textContent=db.rooms.filter(r=>r.session).length;
+ document.getElementById('todayTotal').textContent=money(db.bills.reduce((a,b)=>a+b.total,0));
+ document.getElementById('rooms').innerHTML=db.rooms.map(r=>{let s=r.session;return `<article class="card"><div class="cardtop"><h3>${esc(r.name)}</h3><span class="status ${s?'busy':''}">${s?'شغالة':'متاحة'}</span></div>${s?`<div class="details">النوع: ${s.type}<br>العميل: ${esc(s.customer||'—')}<br>سعر الساعة: ${money(s.rate)}<br>بدأت: ${new Date(s.startedAt).toLocaleTimeString('ar-EG')}</div><div class="timer" id="timer${r.id}">${fmt(elapsed(s))}</div><div class="details">حساب اللعب الحالي: ${money(sessionCost(s))}<br>المشروبات والخدمات: ${money(s.items.reduce((a,x)=>a+x.price*x.qty,0))}</div><div class="actions"><button class="teal" onclick="endSession(${r.id})">إنهاء وحساب</button><button class="secondary" onclick="renameRoom(${r.id})">تعديل الاسم</button></div>`:`<div class="details">الروم جاهز لاستقبال جلسة جديدة</div><div class="actions"><button onclick="startSession(${r.id})">فتح جلسة</button><button class="secondary" onclick="renameRoom(${r.id})">تعديل الاسم</button><button class="danger" onclick="deleteRoom(${r.id})">حذف</button></div>`}</article>`}).join('');
+ let open=db.rooms.filter(r=>r.session);document.getElementById('drinkRoom').innerHTML=open.length?open.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join(''):'<option value="">لا توجد رومات شغالة</option>';
+ document.getElementById('recentBills').innerHTML=db.bills.length?`<table><tr><th>الفاتورة</th><th>الروم</th><th>الإجمالي</th><th>الوقت</th></tr>${db.bills.slice(-5).reverse().map(b=>`<tr><td>#${b.id}</td><td>${esc(b.room)}</td><td>${money(b.total)}</td><td>${new Date(b.closedAt).toLocaleString('ar-EG')}</td></tr>`).join('')}</table>`:'<div class="empty">لسه مفيش فواتير محفوظة</div>';
+}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function addRoom(){let name=prompt('اكتب اسم الروم الجديدة:');if(!name||!name.trim())return;db.rooms.push({id:db.nextId++,name:name.trim(),session:null});save()}
+function renameRoom(id){let r=db.rooms.find(x=>x.id===id),n=prompt('اسم الروم:',r.name);if(n&&n.trim()){r.name=n.trim();save()}}
+function deleteRoom(id){let r=db.rooms.find(x=>x.id===id);if(r.session)return alert('أنهِ الجلسة قبل حذف الروم');if(confirm('متأكد من حذف '+r.name+'؟')){db.rooms=db.rooms.filter(x=>x.id!==id);save()}}
+function startSession(id){pendingRoom=id;document.getElementById('hourRate').value=db.rates.single;document.getElementById('customer').value='';document.getElementById('playType').value='سنجل';document.getElementById('startDialog').showModal()}
+function confirmStart(){let r=db.rooms.find(x=>x.id===pendingRoom),type=document.getElementById('playType').value,rate=Number(document.getElementById('hourRate').value);if(!Number.isFinite(rate)||rate<0)return alert('اكتب سعر ساعة صحيح');r.session={type,rate,customer:document.getElementById('customer').value.trim(),startedAt:Date.now(),items:[]};closeDialog('startDialog');save()}
+function addDrink(){let id=Number(document.getElementById('drinkRoom').value),r=db.rooms.find(x=>x.id===id),name=document.getElementById('drinkName').value.trim(),price=Number(document.getElementById('drinkPrice').value);if(!r||!r.session)return alert('اختار روم شغالة');if(!name||!Number.isFinite(price)||price<0)return alert('اكتب الاسم والسعر بشكل صحيح');r.session.items.push({name,price,qty:1});document.getElementById('drinkName').value='';document.getElementById('drinkPrice').value='';save()}
+function endSession(id){let r=db.rooms.find(x=>x.id===id),s=r.session,play=sessionCost(s),drinks=s.items.reduce((a,x)=>a+x.price*x.qty,0);pendingBill={roomId:id,room:r.name,session:s,play,drinks,total:play+drinks,closedAt:Date.now()};document.getElementById('billDetails').innerHTML=`<div class="billline"><span>الروم</span><b>${esc(r.name)}</b></div><div class="billline"><span>العميل / النوع</span><b>${esc(s.customer||'—')} / ${s.type}</b></div><div class="billline"><span>مدة الجلسة</span><b>${fmt(elapsed(s))}</b></div><div class="billline"><span>حساب اللعب (تقريب لأعلى ساعة)</span><b>${money(play)}</b></div><div class="billline"><span>المشروبات والخدمات</span><b>${money(drinks)}</b></div>${s.items.map(x=>`<div class="billline"><span>${esc(x.name)} × ${x.qty}</span><span>${money(x.price*x.qty)}</span></div>`).join('')}<div class="billline"><strong>الإجمالي</strong><strong style="color:var(--gold)">${money(play+drinks)}</strong></div>`;document.getElementById('billDialog').showModal()}
+function finishBill(){let r=db.rooms.find(x=>x.id===pendingBill.roomId);db.bills.push({id:db.bills.length?Math.max(...db.bills.map(b=>b.id))+1:1,...pendingBill});r.session=null;pendingBill=null;closeDialog('billDialog');save()}
+function showArchive(){document.getElementById('archiveList').innerHTML=db.bills.length?`<table><tr><th>#</th><th>الروم</th><th>الإجمالي</th><th>التاريخ</th></tr>${db.bills.slice().reverse().map(b=>`<tr><td>${b.id}</td><td>${esc(b.room)}</td><td>${money(b.total)}</td><td>${new Date(b.closedAt).toLocaleString('ar-EG')}</td></tr>`).join('')}</table>`:'<div class="empty">الأرشيف فارغ</div>';document.getElementById('archiveDialog').showModal()}
+function openSettings(){document.getElementById('singleRate').value=db.rates.single;document.getElementById('multiRate').value=db.rates.multi;document.getElementById('settingsDialog').showModal()}
+function saveSettings(){let a=Number(document.getElementById('singleRate').value),b=Number(document.getElementById('multiRate').value);if(a<0||b<0||!Number.isFinite(a)||!Number.isFinite(b))return alert('راجع الأسعار');db.rates={single:a,multi:b};closeDialog('settingsDialog');save()}
+function closeDialog(id){document.getElementById(id).close()}
+function exportData(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='abu-assem-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(e){let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let x=JSON.parse(rd.result);if(!Array.isArray(x.rooms)||!Array.isArray(x.bills))throw 0;db=x;save();alert('تم استرجاع النسخة الاحتياطية')}catch(_){alert('ملف النسخة الاحتياطية غير صحيح')}};rd.readAsText(f);e.target.value=''}
+render();setInterval(()=>db.rooms.forEach(r=>{if(r.session){let el=document.getElementById('timer'+r.id);if(el)el.textContent=fmt(elapsed(r.session))}}),1000);
+</script>
+</body></html>
